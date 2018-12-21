@@ -32,16 +32,16 @@ def splitDataSet(dataSet, axis, value):
 	return retDataSet
 
 def CreateDataSet():
-	dataSet = [[1,1,1,'yes'],
+	dataSet = [[1,1,3,'yes'],
 				[1,1,1,'yes'],
 				[1,0,1,'no'],
 				[0,1,1,'no'],
-				[0,1,1,'no']]
-	labels = ['no surfacing', 'flippers']
+				[0,0,1,'no']]
+	labels = ['no surfacing', 'flippers', 'head']
 	return dataSet, labels
 
 dataSet, labels = CreateDataSet()
-print splitDataSet(dataSet, 1, 1)
+#print splitDataSet(dataSet, 1, 1)
 
 def ChooseBestFeatureToSplit(dataSet):
 	bestInfoGain = 0.0
@@ -60,6 +60,8 @@ def ChooseBestFeatureToSplit(dataSet):
 		if(infoGain > bestInfoGain):
 			bestInfoGain = infoGain
 			bestFeature = i
+	if bestFeature == -1:    #如果intfoGain==0怎么办
+		return 0
 	return bestFeature
 	
 bestFeature = ChooseBestFeatureToSplit(dataSet)
@@ -83,5 +85,30 @@ def createTree(dataSet, labels):
 	bestFeat = ChooseBestFeatureToSplit(dataSet)
 	bestFeatLabel = labels[bestFeat]
 	myTree = {bestFeatLabel:{}}
+	del(labels[bestFeat])
+	featValues = [example[bestFeat] for example in dataSet]
+	uniqueVals = set(featValues)
+	for value in uniqueVals:
+		subLabels = labels[:]
+		myTree[bestFeatLabel][value] = createTree(splitDataSet\
+				(dataSet, bestFeat, value), subLabels)
+	return myTree
 
-createTree(dataSet, labels)
+myTree = createTree(dataSet, labels)
+#print myTree
+
+def classify(inputTree, featLabels, testVec):
+	firstStr = inputTree.keys()[0]
+	secondDict = inputTree[firstStr]
+	featIndex = featLabels.index(firstStr)
+	for key in secondDict.keys():
+		if testVec[featIndex] == key:
+			if type(secondDict[key]).__name__ == 'dict':
+				classRet = classify(secondDict[key], featLabels, testVec)
+			else:
+				classRet = secondDict[key]
+	return classRet
+
+print myTree
+classRet = classify(myTree, ['no surfacing', 'flippers', 'head'], [1,1,1])
+print classRet
